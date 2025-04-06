@@ -5,35 +5,59 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useApp } from '@/context/AppContext';
 import { Folder, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 const FolderSelector: React.FC = () => {
   const { folderSources, addFolderSource, removeFolderSource } = useApp();
   const folderInputRef = useRef<HTMLInputElement>(null);
 
   const handleFolderSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    try {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
 
-    // Get the selected folder (we're just using the first file's path in this mock)
-    const file = files[0];
-    const path = file.webkitRelativePath;
-    
-    if (!path) return;
-    
-    // Extract folder name from path (first segment)
-    const folderName = path.split('/')[0];
-    
-    // Create new folder source
-    const newSource = {
-      id: crypto.randomUUID(),
-      path: folderName, // Just for display in the mock
-      name: folderName
-    };
+      // Get the selected folder (we're just using the first file's path in this mock)
+      const file = files[0];
+      const path = file.webkitRelativePath;
+      
+      if (!path) {
+        toast.error("Couldn't get folder path. Please try again.");
+        return;
+      }
+      
+      // Extract folder name from path (first segment)
+      const folderName = path.split('/')[0];
+      
+      // Create new folder source
+      const newSource = {
+        id: crypto.randomUUID(),
+        path: folderName, // Just for display in the mock
+        name: folderName
+      };
 
-    addFolderSource(newSource);
-    
-    // Reset input
-    if (folderInputRef.current) folderInputRef.current.value = '';
+      addFolderSource(newSource);
+    } catch (error) {
+      console.error("Error selecting folder:", error);
+      toast.error("There was an error selecting the folder. Please try again.");
+    } finally {
+      // Reset input
+      if (folderInputRef.current) folderInputRef.current.value = '';
+    }
+  };
+
+  const triggerFolderSelect = () => {
+    try {
+      // Dynamically add the directory attributes
+      const input = folderInputRef.current;
+      if (input) {
+        input.setAttribute('webkitdirectory', '');
+        input.setAttribute('directory', '');
+        input.click();
+      }
+    } catch (error) {
+      console.error("Error triggering folder select:", error);
+      toast.error("There was an error opening the folder selector. Please try again.");
+    }
   };
 
   return (
@@ -52,20 +76,11 @@ const FolderSelector: React.FC = () => {
               type="file"
               ref={folderInputRef}
               onChange={handleFolderSelect}
-              // webkitdirectory and directory attributes need to be added via DOM for TypeScript
               className="hidden"
               id="folder-input"
             />
             <Button 
-              onClick={() => {
-                // Dynamically add the directory attributes
-                const input = folderInputRef.current;
-                if (input) {
-                  input.setAttribute('webkitdirectory', '');
-                  input.setAttribute('directory', '');
-                  input.click();
-                }
-              }}
+              onClick={triggerFolderSelect}
               className="w-full"
               variant="outline"
               disabled={folderSources.length >= 3}

@@ -5,37 +5,61 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useApp } from '@/context/AppContext';
 import { EmailSource } from '@/types';
 import { Folder, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const EmailFileSelector: React.FC = () => {
   const { emailSources, addEmailSource, removeEmailSource } = useApp();
   const directoryInputRef = useRef<HTMLInputElement>(null);
 
   const handleDirectorySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+    try {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
 
-    // Just using the first file to get the directory path in this mock
-    const file = files[0];
-    const path = file.webkitRelativePath;
-    
-    if (!path) return;
-    
-    // Extract folder name from path (first segment)
-    const folderName = path.split('/')[0];
-    
-    // Create new email source for the directory
-    const newSource: EmailSource = {
-      id: crypto.randomUUID(),
-      path: folderName,
-      type: 'directory',
-      name: folderName,
-      size: 0 // We don't have actual size for directories in this mock
-    };
+      // Just using the first file to get the directory path in this mock
+      const file = files[0];
+      const path = file.webkitRelativePath;
+      
+      if (!path) {
+        toast.error("Couldn't get directory path. Please try again.");
+        return;
+      }
+      
+      // Extract folder name from path (first segment)
+      const folderName = path.split('/')[0];
+      
+      // Create new email source for the directory
+      const newSource: EmailSource = {
+        id: crypto.randomUUID(),
+        path: folderName,
+        type: 'directory',
+        name: folderName,
+        size: 0 // We don't have actual size for directories in this mock
+      };
 
-    addEmailSource(newSource);
+      addEmailSource(newSource);
+    } catch (error) {
+      console.error("Error selecting directory:", error);
+      toast.error("There was an error selecting the directory. Please try again.");
+    } finally {
+      // Reset input
+      if (directoryInputRef.current) directoryInputRef.current.value = '';
+    }
+  };
 
-    // Reset input
-    if (directoryInputRef.current) directoryInputRef.current.value = '';
+  const triggerDirectorySelect = () => {
+    try {
+      // Dynamically add the directory attributes
+      const input = directoryInputRef.current;
+      if (input) {
+        input.setAttribute('webkitdirectory', '');
+        input.setAttribute('directory', '');
+        input.click();
+      }
+    } catch (error) {
+      console.error("Error triggering directory select:", error);
+      toast.error("There was an error opening the directory selector. Please try again.");
+    }
   };
 
   return (
@@ -55,15 +79,7 @@ const EmailFileSelector: React.FC = () => {
               id="directory-input"
             />
             <Button 
-              onClick={() => {
-                // Dynamically add the directory attributes
-                const input = directoryInputRef.current;
-                if (input) {
-                  input.setAttribute('webkitdirectory', '');
-                  input.setAttribute('directory', '');
-                  input.click();
-                }
-              }}
+              onClick={triggerDirectorySelect}
               className="w-full"
               variant="outline"
             >
