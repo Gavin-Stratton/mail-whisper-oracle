@@ -62,7 +62,7 @@ const EmailFileSelector: React.FC = () => {
               variant="outline"
             >
               <Upload className="mr-2 h-4 w-4" />
-              Select Email Files (.pst, .olm, .mbox)
+              Select Email Files
             </Button>
           </div>
 
