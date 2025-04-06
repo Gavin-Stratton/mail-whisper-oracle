@@ -2,7 +2,7 @@
 export interface EmailSource {
   id: string;
   path: string;
-  type: 'pst' | 'olm' | 'mbox' | 'other';
+  type: 'pst' | 'olm' | 'mbox' | 'other' | 'directory';
   name: string;
   size: number;
 }

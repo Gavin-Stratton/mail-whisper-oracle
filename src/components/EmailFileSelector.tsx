@@ -4,81 +4,86 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useApp } from '@/context/AppContext';
 import { EmailSource } from '@/types';
-import { Trash2, Upload } from 'lucide-react';
+import { Folder, Trash2 } from 'lucide-react';
 
 const EmailFileSelector: React.FC = () => {
   const { emailSources, addEmailSource, removeEmailSource } = useApp();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const directoryInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDirectorySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
-    // Convert FileList to Array to iterate
-    Array.from(files).forEach((file) => {
-      const extension = file.name.split('.').pop()?.toLowerCase() || 'other';
-      let type: EmailSource['type'] = 'other';
-      
-      if (extension === 'pst') type = 'pst';
-      else if (extension === 'olm') type = 'olm';
-      else if (extension === 'mbox') type = 'mbox';
+    // Just using the first file to get the directory path in this mock
+    const file = files[0];
+    const path = file.webkitRelativePath;
+    
+    if (!path) return;
+    
+    // Extract folder name from path (first segment)
+    const folderName = path.split('/')[0];
+    
+    // Create new email source for the directory
+    const newSource: EmailSource = {
+      id: crypto.randomUUID(),
+      path: folderName,
+      type: 'directory',
+      name: folderName,
+      size: 0 // We don't have actual size for directories in this mock
+    };
 
-      // Create new email source
-      const newSource: EmailSource = {
-        id: crypto.randomUUID(),
-        path: file.webkitRelativePath || file.name, // Just for display in the mock
-        type,
-        name: file.name,
-        size: file.size
-      };
-
-      addEmailSource(newSource);
-    });
+    addEmailSource(newSource);
 
     // Reset input
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (directoryInputRef.current) directoryInputRef.current.value = '';
   };
 
   return (
     <Card className="w-full mb-4">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">Email Files</CardTitle>
+        <CardTitle className="text-lg font-semibold">Email Directory</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-4">
-          {/* File Input Button */}
+          {/* Directory Input Button */}
           <div className="flex justify-center">
             <input
               type="file"
-              ref={fileInputRef}
-              onChange={handleFileSelect}
-              accept=".pst,.olm,.mbox,application/vnd.ms-outlook,application/mac-outlook,application/mbox"
-              multiple
+              ref={directoryInputRef}
+              onChange={handleDirectorySelect}
               className="hidden"
+              id="directory-input"
             />
             <Button 
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                // Dynamically add the directory attributes
+                const input = directoryInputRef.current;
+                if (input) {
+                  input.setAttribute('webkitdirectory', '');
+                  input.setAttribute('directory', '');
+                  input.click();
+                }
+              }}
               className="w-full"
               variant="outline"
             >
-              <Upload className="mr-2 h-4 w-4" />
-              Select Email Files
+              <Folder className="mr-2 h-4 w-4" />
+              Select Email Directory
             </Button>
           </div>
 
-          {/* Display selected files */}
+          {/* Display selected directories */}
           {emailSources.length > 0 && (
             <div className="mt-4">
-              <h3 className="text-sm font-medium mb-2">Selected Email Files:</h3>
+              <h3 className="text-sm font-medium mb-2">Selected Email Directories:</h3>
               <ul className="space-y-2">
                 {emailSources.map((source) => (
                   <li key={source.id} className="flex items-center justify-between bg-muted p-2 rounded-md">
                     <div className="flex items-center">
+                      <Folder className="h-4 w-4 text-muted-foreground" />
                       <div className="ml-2">
                         <p className="text-sm font-medium">{source.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {(source.size / (1024 * 1024)).toFixed(2)} MB • {source.type.toUpperCase()}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{source.path}</p>
                       </div>
                     </div>
                     <Button
