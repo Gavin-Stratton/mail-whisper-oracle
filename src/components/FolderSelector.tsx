@@ -28,6 +28,13 @@ const FolderSelector: React.FC = () => {
       // Extract folder name from path (first segment)
       const folderName = path.split('/')[0];
       
+      // Check if folder is already selected
+      const alreadySelected = folderSources.some(source => source.name === folderName);
+      if (alreadySelected) {
+        toast.error(`Folder "${folderName}" is already selected.`);
+        return;
+      }
+      
       // Create new folder source
       const newSource = {
         id: crypto.randomUUID(),
@@ -36,6 +43,9 @@ const FolderSelector: React.FC = () => {
       };
 
       addFolderSource(newSource);
+      
+      // Log for debugging
+      console.log("Current folder sources:", [...folderSources, newSource]);
     } catch (error) {
       console.error("Error selecting folder:", error);
       toast.error("There was an error selecting the folder. Please try again.");
